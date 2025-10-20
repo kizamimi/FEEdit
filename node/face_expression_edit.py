@@ -32,10 +32,9 @@ def predict_noise(self, x, timestep, model_options={}, seed=None):
         cfg_result = fn(args)
     return cfg_result
 
-comfy.samplers.CFGGuider.predict_noise = predict_noise
-
 def sample(model, noise, positive, negative, cfg, device, sampler, sigmas, model_options={}, latent_image=None, denoise_mask=None, callback=None, disable_pbar=False, seed=None):
     cfg_guider = comfy.samplers.CFGGuider(model)
+    cfg_guider.predict_noise = predict_noise.__get__(cfg_guider, comfy.samplers.CFGGuider)
     cfg_guider.set_conds(positive, negative)
     cfg_guider.set_cfg(cfg)
     return cfg_guider.sample(noise, latent_image, sampler, sigmas, denoise_mask, callback, disable_pbar, seed)
@@ -73,10 +72,9 @@ def KSampler_sample(self, noise, positive, negative, cfg, latent_image=None, sta
 
     return sample(self.model, noise, positive, negative, cfg, self.device, sampler, sigmas, self.model_options, latent_image=latent_image, denoise_mask=denoise_mask, callback=callback, disable_pbar=disable_pbar, seed=seed)
 
-comfy.samplers.KSampler.sample = KSampler_sample
-
 def common_ksampler_sample(model, noise, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, denoise=1.0, disable_noise=False, start_step=None, last_step=None, force_full_denoise=False, noise_mask=None, sigmas=None, callback=None, disable_pbar=False, seed=None):
     sampler = comfy.samplers.KSampler(model, steps=steps, device=model.load_device, sampler=sampler_name, scheduler=scheduler, denoise=denoise, model_options=model.model_options)
+    sampler.sample = KSampler_sample.__get__(sampler, comfy.samplers.KSampler)
 
     samples = sampler.sample(noise, positive, negative, cfg=cfg, latent_image=latent_image, start_step=start_step, last_step=last_step, force_full_denoise=force_full_denoise, denoise_mask=noise_mask, sigmas=sigmas, callback=callback, disable_pbar=disable_pbar, seed=seed)
     samples = samples.to(comfy.model_management.intermediate_device())
